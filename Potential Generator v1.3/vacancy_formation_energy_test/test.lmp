@@ -1,0 +1,40 @@
+#模型基本设置
+variable a0 equal 3.3
+units   metal
+dimension   3
+boundary    p  p    p      
+atom_style  atomic
+#建模
+lattice bcc ${a0}
+region  box block -4 4 -4 4 -4 4
+create_box  2 box
+lattice bcc ${a0}
+create_atoms    1 box
+#力场参数设置
+pair_style  eam/alloy
+pair_coeff * * CuNb.eam.alloy Nb Nb
+#计算势能
+compute eng all pe/atom 
+compute eatoms all reduce sum c_eng
+run 0 
+#计算原子数量
+variable N equal count(all)
+variable No equal $N
+#计算初始能量E0
+variable E equal "c_eatoms"
+variable Ei equal $E
+#产生空位原子
+variable r2 equal sqrt(${a0}^2+${a0}^2)/4
+region select sphere 0 0 0 ${r2} units box
+delete_atoms region select compress yes
+write_data  cu.data
+run 0
+#计算插入空位原子后的能量Ef
+variable Ef equal "c_eatoms"
+#计算空位原子形成能
+variable Ev equal (${Ef}-((${No}-1)/${No})*${Ei})
+#输出空位原子形成能
+print "Vacancy formation energy = ${Ev} ev"
+
+# Vacancy formation energy = 2.75269551328438 ev
+# 参考值：2.75 ev

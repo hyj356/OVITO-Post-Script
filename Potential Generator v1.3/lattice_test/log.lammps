@@ -1,0 +1,108 @@
+LAMMPS (15 Jun 2023)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+Loaded 1 plugins from D:\Program Files (x86)\LAMMPS 64-bit 15Jun2023\plugins
+
+# This input script is used to calculate
+# the lattice constant of HEA
+# Powered by Hyj
+
+units           metal
+boundary        p p p
+atom_style      atomic
+neigh_modify    every 1 delay 0 check yes
+timestep    0.001
+
+variable ini_lat equal 3.4
+variable rep equal 10
+# build the model
+lattice       bcc ${ini_lat}
+lattice       bcc 3.4
+Lattice spacing in x,y,z = 3.4 3.4 3.4
+region        box block 0 ${rep} 0 ${rep} 0 ${rep}
+region        box block 0 10 0 ${rep} 0 ${rep}
+region        box block 0 10 0 10 0 ${rep}
+region        box block 0 10 0 10 0 10
+create_box    1 box
+Created orthogonal box = (0 0 0) to (34 34 34)
+  1 by 1 by 1 MPI processor grid
+create_atoms  1 box
+Created 2000 atoms
+  using lattice units in orthogonal box = (0 0 0) to (34 34 34)
+  create_atoms CPU = 0.000 seconds
+
+#设置势函数的相关参数
+pair_style     eam/alloy
+pair_coeff     * * CuNb.eam.alloy Nb
+Reading eam/alloy potential file CuNb.eam.alloy with DATE: 2025-04-10
+
+thermo      100
+thermo_style custom step temp etotal press cpu
+
+fix 1 all box/relax iso 0.0 vmax 0.001
+min_style cg
+minimize 1e-10 1e-10 50000 50000
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8.3911966
+  ghost atom cutoff = 8.3911966
+  binsize = 4.1955983, bins = 9 9 9
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair eam/alloy, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d
+      bin: standard
+WARNING: Energy due to 1 extra global DOFs will be included in minimizer energies
+ (src/min.cpp:225)
+Per MPI rank memory allocation (min/avg/max) = 5.003 | 5.003 | 5.003 Mbytes
+   Step          Temp          TotEng         Press           CPU      
+         0   0             -14997.35      -124764.04      0            
+        31   0             -15140.017     -0.028848575    0.056926     
+Loop time of 0.05703 on 1 procs for 31 steps with 2000 atoms
+
+82.2% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+Minimization stats:
+  Stopping criterion = energy tolerance
+  Energy initial, next-to-last, final = 
+     -14997.3501015524  -15140.0165100206  -15140.0165102447
+  Force two-norm initial, final = 9181.9954 0.0020000681
+  Force max component initial, final = 9181.9954 0.0020000681
+  Final line search alpha, max atom move = 0.0023691721 4.7385054e-06
+  Iterations, force evaluations = 31 33
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.052628   | 0.052628   | 0.052628   |   0.0 | 92.28
+Neigh   | 0.001843   | 0.001843   | 0.001843   |   0.0 |  3.23
+Comm    | 0.000375   | 0.000375   | 0.000375   |   0.0 |  0.66
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.002184   |            |       |  3.83
+
+Nlocal:           2000 ave        2000 max        2000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:           5471 ave        5471 max        5471 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:         136000 ave      136000 max      136000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 136000
+Ave neighs/atom = 68
+Neighbor list builds = 1
+Dangerous builds = 0
+unfix 1
+
+variable lat equal lx/${rep}
+variable lat equal lx/10
+variable coh equal -pe/count(all)
+print "Lattice constant is ${lat} ang." screen yes
+Lattice constant is 3.3000103429358 ang.
+print "Cohesive energy is ${coh} ev." screen yes
+Cohesive energy is 7.57000825512235 ev.
+write_data watch.lmp
+System init for write_data ...
+Total wall time: 0:00:00
